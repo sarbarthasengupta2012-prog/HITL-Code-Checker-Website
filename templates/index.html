@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Code IQ</title>
+        <link rel="stylesheet" type="text/css" href="../static/css/index.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    </head>
+    <body>
+        <h1>Code Checker IQ</h1>
+        <textarea id="textA" rows="10" cols="50"></textarea>
+        <button id="btn">Check Code</button>
+        <button id="btnQ">If you believe the AI made a mistake, click here.</button>
+        <h3 id="res">Results appear here...</h3>
+        <script>
+            const socket = io()
+            const reportBtn = document.getElementById('btnQ');
+            const checkBtn = document.getElementById('btn');
+
+            checkBtn.onclick = () => {
+                const code = document.getElementById('textA').value;
+                socket.emit("codesocket", code);
+            };
+
+            socket.on("res", (cocacolaespuma) => {
+                document.getElementById("res").innerText = cocacolaespuma;
+            });
+
+            reportBtn.onclick = () => {
+                const reportData = {
+                    code: document.getElementById('textA').value,
+                    ai_label: res.innerText
+                };
+                socket.emit("adminsocket", reportData);
+
+                alert("Sent to admin!");
+                reportBtn.style.display = "none";
+            };
+        </script>
+    </body>
+</html>

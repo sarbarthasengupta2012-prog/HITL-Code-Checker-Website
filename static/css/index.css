@@ -1,0 +1,76 @@
+body {
+    background-color: #1A2356;
+}
+
+h1 {
+    text-align: center;
+    color: #FAFAFA;
+    font-family: Verdana;
+    text-shadow: 2px 2px 5px #000000;
+}
+
+textarea {
+    text-align: left;
+    background-color: #151C45;
+    color: ghostwhite;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: medium;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    /* Added sleekness here */
+    border-radius: 15px;
+    border: 1px solid #2A367A;
+    padding: 15px;
+}
+
+button {
+    font-size: xx-large;
+    font-family: "Arial Black";
+    color: #CDD1E7;
+    background-color: #0D112A;
+    border-style: solid;
+    border-radius: 20px;
+    border-color: #151C45;
+    border-block-width: thick;
+    display: block;
+    margin: 20px auto;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+#btnQ {
+    background: linear-gradient(135.2deg, #0D112A 0%, #1A2356 100%);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 1.2rem;
+    border: 2px solid #5C6BC0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    padding: 15px 40px;
+    cursor: pointer;
+    outline: none;
+}
+
+#btnQ:hover {
+    border-color: #FAFAFA;
+    color: #FFFFFF;
+    box-shadow: 0 0 20px rgba(92, 107, 192, 0.6);
+    background: linear-gradient(135.2deg, #1A2356 0%, #0D112A 100%);
+}
+
+button:hover {
+    background-color: #1A2356;
+    transform: scale(1.05);
+    box-shadow: 0px 0px 15px rgba(205, 209, 231, 0.4);
+    border-color: #CDD1E7;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+h3 {
+    text-align: left;
+    color: #FAFAFA;
+    font-family: Verdana;
+}

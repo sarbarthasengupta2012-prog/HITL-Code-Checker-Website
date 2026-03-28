@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <title>ADMIN PANEL: CODE IQ</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    </head>
+    <body>
+        <h1>ADMIN PANEL</h1>
+        <h3>If you are not a admin: please leave immediately.</h3>
+        <h1>SUBMITTED QUERIES:</h1>
+        <div id="queries"></div>
+        <script>
+            (async () => {
+                const password = prompt("ENTER THE PASSWORD");
+
+                try {
+                    const response = await fetch('/check_password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: password })
+                    });
+
+                    if (response.ok) {
+                        const socket = io();
+                        const queriesDiv = document.getElementById('queries');
+
+                        socket.on("adminsocket", (data) => {
+                            const card = document.createElement('div');
+                            card.className = "query-card";
+
+                            const codeContainer = document.createElement('pre');
+                            const codeElement = document.createElement('code');
+                            codeElement.textContent = data.code;
+                            codeContainer.appendChild(codeElement);
+
+                            card.innerHTML = `
+                                <p><strong>User's Code:</strong></p>
+                                <p><strong>AI Label:</strong> ${data.ai_label}</p>
+                            `;
+
+                            card.insertBefore(codeContainer, card.childNodes[2]);
+
+                            // Helper to create buttons
+                            const createBtn = (text, cls, val) => {
+                                const btn = document.createElement('button');
+                                btn.className = `admin-btn ${cls}`;
+                                btn.textContent = text;
+                                btn.onclick = () => {
+                                    if(val !== null) socket.emit("save_to_json", { code: data.code, label: val });
+                                    card.remove();
+                                    if(val !== null) alert("Saved");
+                                };
+                                return btn;
+                            };
+
+                            card.appendChild(createBtn("Mark as CLEAN (1)", "btn-good", 1));
+                            card.appendChild(createBtn("Mark as MESSY (0)", "btn-bad", 0));
+                            card.appendChild(createBtn("Ignore Code", "btn-ignore", null));
+
+                            queriesDiv.appendChild(card);
+                        });
+                    } else {
+                        alert("Access Denied");
+                        document.body.innerHTML = "<h1>Unauthorized</h1>";
+                    }
+                } catch (err) {
+                    console.error("Connection failed:", err);
+                    alert("Could not connect to server.");
+                }
+            })();
+        </script>
+    </body>
+</html>

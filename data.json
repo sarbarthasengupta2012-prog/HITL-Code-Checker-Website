@@ -1,0 +1,74 @@
+[
+    {
+        "code": "def add(a, b):\n    return a + b",
+        "label": 1
+    },
+    {
+        "code": "import os;import sys;x=1;print(x)",
+        "label": 0
+    },
+    {
+        "code": "class Database:\n    def __init__(self):\n        self.connected = False",
+        "label": 1
+    },
+    {
+        "code": "def calculate_price(p, t, d):\n    # Cryptic naming and magic numbers\n    res = p + (p * t)\n    res = res - d\n    if res < 0: return 0\n    return res",
+        "label": 0
+    },
+    {
+        "code": "def get_user_full_name(user):\n    \"\"\"Returns formatted name from user object.\"\"\"\n    if not user:\n        return \"Guest\"\n    return f\"{user.first_name} {user.last_name}\".strip()",
+        "label": 1
+    },
+    {
+        "code": "def do_everything(data):\n    # God Function / High Complexity\n    for item in data:\n        if item.type == 'A':\n            if item.val > 10:\n                for x in item.children:\n                    if x.active:\n                        print(x)\n        elif item.type == 'B':\n            save_to_db(item)\n            send_email(item)\n            log_event(item)\n            update_inventory(item)",
+        "label": 0
+    },
+    {
+        "code": "def log_error(message: str, severity: int = 1) -> None:\n    timestamp = datetime.now().isoformat()\n    print(f\"[{timestamp}] SEV-{severity}: {message}\")",
+        "label": 1
+    },
+    {
+        "code": "class X:\n def __init__(self,a,b,c,d,e,f,g):\n  self.a=a\n  self.b=b\n  self.c=c\n  self.d=d\n  self.e=e\n  self.f=f\n  self.g=g\n def out(self):\n  return self.a+self.b+self.c",
+        "label": 0
+    },
+    {
+        "code": "import math\n\ndef calculate_hypotenuse(a: float, b: float) -> float:\n    return math.sqrt(a**2 + b**2)",
+        "label": 1
+    },
+    {
+        "code": "try:\n    x = 1/0\nexcept:\n    pass",
+        "label": 0
+    },
+    {
+        "code": "def fetch_data(url):\n    response = requests.get(url)\n    if response.status_code == 200:\n        return response.json()\n    raise ConnectionError(\"Failed to fetch data\")",
+        "label": 1
+    },
+    {
+        "code": "def check(s):\n    if s == s[::-1]:\n        return True\n    else:\n        return False",
+        "label": 1
+    },
+    {
+        "code": "val = 10\ndef global_mess():\n    global val\n    val = val * 2\n    import random\n    print(random.randint(0, val))",
+        "label": 0
+    },
+    {
+        "code": "from abc import ABC, abstractmethod\n\nclass Shape(ABC):\n    @abstractmethod\n    def area(self):\n        pass",
+        "label": 1
+    },
+    {
+        "code": "def process(n):\n    return [i*i for i in range(n) if i % 2 == 0]",
+        "label": 1
+    },
+    {
+        "code": "print(\"hello world\")",
+        "label": 1
+    },
+    {
+        "code": "a = 5\nb = a**a\n\nprint(b)",
+        "label": 1
+    },
+    {
+        "code": "thefile = open(r\"./readthisfile\",\"r\")\ndef generatePower(file):\n    for line in file:\n        yield line\n\nthis = generatePower(thefile)\n\nfor a in this:\n    print(a.strip())",
+        "label": 1
+    }
+]
