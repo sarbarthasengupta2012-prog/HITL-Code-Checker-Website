@@ -3,3 +3,4 @@ flask_socketio
 scikit-learn
 eventlet
 python-dotenv
+pymongo
