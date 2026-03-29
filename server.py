@@ -79,7 +79,6 @@ try:
     @socketio.on("codesocket")
     def handle_code(data):
         result = model.check_code(data)
-        queries_collection.insert_one({"code": data, "result": result})
         emit("res", result)
 
 
