@@ -5,3 +5,4 @@ eventlet
 python-dotenv
 pymongo
 gunicorn
+joblib
