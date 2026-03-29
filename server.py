@@ -72,6 +72,8 @@ try:
     @socketio.on("adminsocket")
     def forward_to_admin(data):
         emit("adminsocket", data, broadcast=True)
+        with open("queries.json") as f:
+            json.dump(data,f,indent=4)
 
 
     @socketio.on("save_to_json")

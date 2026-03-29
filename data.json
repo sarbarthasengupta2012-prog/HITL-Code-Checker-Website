@@ -64,10 +64,6 @@
         "label": 1
     },
     {
-        "code": "a = 5\nb = a**a\n\nprint(b)",
-        "label": 1
-    },
-    {
         "code": "thefile = open(r\"./readthisfile\",\"r\")\ndef generatePower(file):\n    for line in file:\n        yield line\n\nthis = generatePower(thefile)\n\nfor a in this:\n    print(a.strip())",
         "label": 1
     }
