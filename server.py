@@ -1,7 +1,7 @@
 import os
 import traceback
 import sys
-import flask
+import joblib
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 from sklearn.linear_model import LogisticRegression
@@ -32,7 +32,6 @@ try:
                 self.train_model()
 
         def train_model(self):
-            # Pull all training data from MongoDB
             cursor = training_collection.find({})
             data = list(cursor)
 
