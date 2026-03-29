@@ -23,10 +23,13 @@ try:
 
     class AI:
         def __init__(self):
-            self.vectorizer = CountVectorizer()
-            self.clf = LogisticRegression()
-            self.model = make_pipeline(self.vectorizer, self.clf)
-            self.train_model()
+            try:
+                self.model = joblib.load("model.pkl")
+                print("AI Brain loaded from model.pkl successfully!")
+            except Exception as e:
+                print(f"Could not load model.pkl: {e}")
+                self.model = make_pipeline(CountVectorizer(), LogisticRegression())
+                self.train_model()
 
         def train_model(self):
             # Pull all training data from MongoDB
