@@ -4,3 +4,4 @@ scikit-learn
 eventlet
 python-dotenv
 pymongo
+gunicorn
