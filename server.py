@@ -1,6 +1,4 @@
 import os
-import traceback
-import sys
 import joblib
 import dotenv
 import pymongo
@@ -15,7 +13,6 @@ from bson.objectid import ObjectId
 
 dotenv.load_dotenv(".env")
 
-# Database Setup
 client = pymongo.MongoClient(os.environ.get("MONGO"))
 db = client["codechecker"]
 training_collection = db["training"]
@@ -77,6 +74,9 @@ def handle_code_check(code_text):
 @socketio.on("adminsocket")
 def handle_admin_report(data):
     queries_collection.insert_one(data)
+    data["id"] = str(data["id"])
+    del(data["id"])
+    emit("updateLogs",data)
 
 @socketio.on("get_info")
 def handle_get_info():

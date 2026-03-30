@@ -30,7 +30,6 @@
         (async () => {
             const password = prompt("ENTER THE PASSWORD");
 
-            // 1. Verify password via standard POST request
             const response = await fetch('/check_password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -42,13 +41,46 @@
                 document.body.innerHTML = "<h1 style='color:red;'>Unauthorized Access</h1>";
                 return;
             }
-
-            // 2. Connect socket only AFTER password is confirmed
             const socket = io();
             const queriesDiv = document.getElementById('queries');
 
             // Request initial data
             socket.emit("get_info");
+
+            socket.on("updateLogs", (data) => {
+                // Assuming the backend is now sending 'id' as a string per our previous fix
+                const id = data.id || (data._id ? data._id.$oid : null);
+                const card = document.createElement('div');
+                card.className = "query-card";
+
+                card.innerHTML = `
+                    <pre><code></code></pre>
+                    <p><strong>AI Suggestion:</strong> <span class="ai-label"></span></p>
+                    <button class="btn-good">Mark CLEAN (1)</button>
+                    <button class="btn-bad">Mark MESSY (0)</button>
+                    <button class="btn-ignore">Ignore/Delete</button>
+                `;
+                card.querySelector('code').textContent = data.code;
+                card.querySelector('.ai-label').textContent = data.ai_label || 'No prediction recorded';
+
+                card.querySelector('.btn-good').onclick = () => {
+                    socket.emit("save_to_json", { id: id, code: data.code, label: 1 });
+                    card.remove();
+                };
+
+                card.querySelector('.btn-bad').onclick = () => {
+                    socket.emit("save_to_json", { id: id, code: data.code, label: 0 });
+                    card.remove();
+            };
+
+    // Ignore Button
+    card.querySelector('.btn-ignore').onclick = () => {
+        socket.emit("delete_query", { id: id });
+        card.remove();
+    };
+
+    queriesDiv.appendChild(card);
+});
 
             socket.on("get_info", (data) => {
                 queriesDiv.innerHTML = "";
@@ -57,12 +89,9 @@
                 }
 
                 data.forEach(item => {
-                    // MongoDB ID is stored as an object, we need the $oid string
                     const id = item._id.$oid;
                     const card = document.createElement('div');
                     card.className = "query-card";
-
-                    // Use textContent for code to prevent XSS (very important!)
                     card.innerHTML = `
                         <pre><code></code></pre>
                         <p><strong>AI Suggestion:</strong> <span class="ai-label"></span></p>

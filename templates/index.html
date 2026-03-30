@@ -29,7 +29,7 @@
             reportBtn.onclick = () => {
                 const reportData = {
                     code: document.getElementById('textA').value,
-                    ai_label: resDisplay.innerText // Corrected reference
+                    ai_label: resDisplay.innerText
                 };
                 socket.emit("adminsocket", reportData);
 
