@@ -1,35 +1,36 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>ADMIN PANEL: CODE IQ</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-        <style>
-            body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-            .query-card {
-                background: white;
-                padding: 15px;
-                margin-bottom: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            }
-            pre { background: #272822; color: #f8f8f2; padding: 10px; overflow-x: auto; border-radius: 4px; }
-            button { margin-right: 10px; padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; }
-            .btn-good { background: #28a745; color: white; }
-            .btn-bad { background: #dc3545; color: white; }
-            .btn-ignore { background: #6c757d; color: white; }
-        </style>
-    </head>
-    <body>
-        <h1>ADMIN PANEL</h1>
-        <p><em>Security Check Active</em></p>
-        <hr>
-        <h2>SUBMITTED QUERIES:</h2>
-        <div id="queries"></div>
+<head>
+    <title>ADMIN PANEL: CODE IQ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .query-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        pre { background: #272822; color: #f8f8f2; padding: 10px; overflow-x: auto; border-radius: 4px; }
+        button { margin-right: 10px; padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-good { background: #28a745; color: white; }
+        .btn-bad { background: #dc3545; color: white; }
+        .btn-ignore { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <h1>ADMIN PANEL</h1>
+    <p><em>Security Check Active</em></p>
+    <hr>
+    <h2>SUBMITTED QUERIES:</h2>
+    <div id="queries"></div>
 
-        <script>
-        (async () => {
-            const password = prompt("ENTER THE PASSWORD");
+    <script>
+    (async () => {
+        const password = prompt("ENTER THE PASSWORD");
 
+        try {
             const response = await fetch('/check_password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -41,18 +42,60 @@
                 document.body.innerHTML = "<h1 style='color:red;'>Unauthorized Access</h1>";
                 return;
             }
-            const socket = io();
-            const queriesDiv = document.getElementById('queries');
+        } catch (e) {
+            return;
+        }
 
-            // Request initial data
-            socket.emit("get_info");
+        const socket = io();
+        const queriesDiv = document.getElementById('queries');
 
-            socket.on("updateLogs", (data) => {
-                // Assuming the backend is now sending 'id' as a string per our previous fix
-                const id = data.id || (data._id ? data._id.$oid : null);
+        socket.emit("get_info");
+
+        socket.on("updateLogs", (data) => {
+            const id = (data._id && data._id.$oid) ? data._id.$oid : (data.id || data._id);
+            const card = document.createElement('div');
+            card.className = "query-card";
+
+            card.innerHTML = `
+                <pre><code></code></pre>
+                <p><strong>AI Suggestion:</strong> <span class="ai-label"></span></p>
+                <button class="btn-good">Mark CLEAN (1)</button>
+                <button class="btn-bad">Mark MESSY (0)</button>
+                <button class="btn-ignore">Ignore/Delete</button>
+            `;
+
+            card.querySelector('code').textContent = data.code || "";
+            card.querySelector('.ai-label').textContent = data.ai_label || 'No prediction recorded';
+
+            card.querySelector('.btn-good').onclick = () => {
+                socket.emit("save_to_json", { id: id, code: data.code, label: 1 });
+                card.remove();
+            };
+
+            card.querySelector('.btn-bad').onclick = () => {
+                socket.emit("save_to_json", { id: id, code: data.code, label: 0 });
+                card.remove();
+            };
+
+            card.querySelector('.btn-ignore').onclick = () => {
+                socket.emit("delete_query", { id: id });
+                card.remove();
+            };
+
+            queriesDiv.prepend(card);
+        });
+
+        socket.on("get_info", (data) => {
+            queriesDiv.innerHTML = "";
+            if (!data || data.length === 0) {
+                queriesDiv.innerHTML = "<p>No pending queries. You're all caught up!</p>";
+                return;
+            }
+
+            data.forEach(item => {
+                const id = (item._id && item._id.$oid) ? item._id.$oid : (item.id || item._id);
                 const card = document.createElement('div');
                 card.className = "query-card";
-
                 card.innerHTML = `
                     <pre><code></code></pre>
                     <p><strong>AI Suggestion:</strong> <span class="ai-label"></span></p>
@@ -60,71 +103,29 @@
                     <button class="btn-bad">Mark MESSY (0)</button>
                     <button class="btn-ignore">Ignore/Delete</button>
                 `;
-                card.querySelector('code').textContent = data.code;
-                card.querySelector('.ai-label').textContent = data.ai_label || 'No prediction recorded';
+
+                card.querySelector('code').textContent = item.code || "";
+                card.querySelector('.ai-label').textContent = item.ai_label || 'No prediction recorded';
 
                 card.querySelector('.btn-good').onclick = () => {
-                    socket.emit("save_to_json", { id: id, code: data.code, label: 1 });
+                    socket.emit("save_to_json", { id: id, code: item.code, label: 1 });
                     card.remove();
                 };
 
                 card.querySelector('.btn-bad').onclick = () => {
-                    socket.emit("save_to_json", { id: id, code: data.code, label: 0 });
+                    socket.emit("save_to_json", { id: id, code: item.code, label: 0 });
                     card.remove();
-            };
+                };
 
-    // Ignore Button
-    card.querySelector('.btn-ignore').onclick = () => {
-        socket.emit("delete_query", { id: id });
-        card.remove();
-    };
+                card.querySelector('.btn-ignore').onclick = () => {
+                    socket.emit("delete_query", { id: id });
+                    card.remove();
+                };
 
-    queriesDiv.appendChild(card);
-});
-
-            socket.on("get_info", (data) => {
-                queriesDiv.innerHTML = "";
-                if (data.length === 0) {
-                    queriesDiv.innerHTML = "<p>No pending queries. You're all caught up!</p>";
-                }
-
-                data.forEach(item => {
-                    const id = item._id.$oid;
-                    const card = document.createElement('div');
-                    card.className = "query-card";
-                    card.innerHTML = `
-                        <pre><code></code></pre>
-                        <p><strong>AI Suggestion:</strong> <span class="ai-label"></span></p>
-                        <button class="btn-good">Mark CLEAN (1)</button>
-                        <button class="btn-bad">Mark MESSY (0)</button>
-                        <button class="btn-ignore">Ignore/Delete</button>
-                    `;
-
-                    card.querySelector('code').textContent = item.code;
-                    card.querySelector('.ai-label').textContent = item.ai_label || 'No prediction recorded';
-
-                    // Clean Button (Label 1)
-                    card.querySelector('.btn-good').onclick = () => {
-                        socket.emit("save_to_json", { id: id, code: item.code, label: 1 });
-                        card.remove();
-                    };
-
-                    // Messy Button (Label 0)
-                    card.querySelector('.btn-bad').onclick = () => {
-                        socket.emit("save_to_json", { id: id, code: item.code, label: 0 });
-                        card.remove();
-                    };
-
-                    // Ignore Button
-                    card.querySelector('.btn-ignore').onclick = () => {
-                        socket.emit("delete_query", { id: id });
-                        card.remove();
-                    };
-
-                    queriesDiv.appendChild(card);
-                });
+                queriesDiv.appendChild(card);
             });
-        })();
-        </script>
-    </body>
+        });
+    })();
+    </script>
+</body>
 </html>
