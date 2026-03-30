@@ -9,62 +9,61 @@
         <h1>SUBMITTED QUERIES:</h1>
         <div id="queries"></div>
         <script>
-            (async () => {
-                const password = prompt("ENTER THE PASSWORD");
+        (async () => {
+            const password = prompt("ENTER THE PASSWORD");
+            const response = await fetch('/check_password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
 
-                try {
-                    const response = await fetch('/check_password', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password: password })
-                    });
+            if (!response.ok) {
+                alert("Access Denied");
+                document.body.innerHTML = "<h1>Unauthorized</h1>";
+                return;
+            }
 
-                    if (response.ok) {
-                        const socket = io();
-                        const queriesDiv = document.getElementById('queries');
+            const socket = io();
+            const queriesDiv = document.getElementById('queries');
 
-                        socket.on("adminsocket", (data) => {
-                            const card = document.createElement('div');
-                            card.className = "query-card";
+            socket.emit("get_info");
 
-                            const codeContainer = document.createElement('pre');
-                            const codeElement = document.createElement('code');
-                            codeElement.textContent = data.code;
-                            codeContainer.appendChild(codeElement);
+            socket.on("get_info", (data) => {
+                queriesDiv.innerHTML = "";
+                data.forEach(item => {
+                    const id = item._id.$oid;
+                    const card = document.createElement('div');
+                    card.className = "query-card";
+                    card.innerHTML = `
+                        <pre><code>${item.code}</code></pre>
+                        <p><strong>AI Suggestion:</strong> ${item.ai_label || 'None'}</p>
+                        <button class="btn-good">Mark CLEAN</button>
+                        <button class="btn-bad">Mark MESSY</button>
+                        <button class="btn-ignore">Ignore</button>
+                    `;
 
-                            card.innerHTML = `
-                                <p><strong>User's Code:</strong></p>
-                                <p><strong>AI Label:</strong> ${data.ai_label}</p>
-                            `;
+                    // Clean Button
+                    card.querySelector('.btn-good').onclick = () => {
+                        socket.emit("save_to_json", { id: id, code: item.code, label: 1 });
+                        card.remove();
+                    };
 
-                            card.insertBefore(codeContainer, card.childNodes[2]);
-                            const createBtn = (text, cls, val) => {
-                                const btn = document.createElement('button');
-                                btn.className = `admin-btn ${cls}`;
-                                btn.textContent = text;
-                                btn.onclick = () => {
-                                    if(val !== null) socket.emit("save_to_json", { code: data.code, label: val });
-                                    card.remove();
-                                    if(val !== null) alert("Saved");
-                                };
-                                return btn;
-                            };
+                    // Messy Button
+                    card.querySelector('.btn-bad').onclick = () => {
+                        socket.emit("save_to_json", { id: id, code: item.code, label: 0 });
+                        card.remove();
+                    };
 
-                            card.appendChild(createBtn("Mark as CLEAN (1)", "btn-good", 1));
-                            card.appendChild(createBtn("Mark as MESSY (0)", "btn-bad", 0));
-                            card.appendChild(createBtn("Ignore Code", "btn-ignore", null));
+                    // Ignore Button
+                    card.querySelector('.btn-ignore').onclick = () => {
+                        socket.emit("delete_query", { id: id });
+                        card.remove();
+                    };
 
-                            queriesDiv.appendChild(card);
-                        });
-                    } else {
-                        alert("Access Denied");
-                        document.body.innerHTML = "<h1>Unauthorized</h1>";
-                    }
-                } catch (err) {
-                    console.error("Connection failed:", err);
-                    alert("Could not connect to server.");
-                }
-            })();
+                    queriesDiv.appendChild(card);
+                });
+            });
+        })();
         </script>
     </body>
 </html>

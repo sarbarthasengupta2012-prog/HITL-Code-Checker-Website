@@ -2,103 +2,88 @@ import os
 import traceback
 import sys
 import joblib
+import dotenv
+import pymongo
+import json
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import make_pipeline
-import dotenv
-import pymongo
+from bson import json_util
+from bson.objectid import ObjectId
 
-# Load environment variables
 dotenv.load_dotenv(".env")
 
 try:
-    # --- MongoDB Setup ---
     client = pymongo.MongoClient(os.environ.get("MONGO"))
     db = client["codechecker"]
     training_collection = db["training"]
     queries_collection = db["queries"]
 
-
     class AI:
         def __init__(self):
             try:
                 self.model = joblib.load("model.pkl")
-                print("AI Brain loaded from model.pkl successfully!")
-            except Exception as e:
-                print(f"Could not load model.pkl: {e}")
+                print("AI loaded from disk.")
+            except:
+                print("Creating new model...")
                 self.model = make_pipeline(CountVectorizer(), LogisticRegression())
                 self.train_model()
 
         def train_model(self):
             cursor = training_collection.find({})
             data = list(cursor)
-
-            if len(data) > 0:
+            if len(data) > 2:
                 code_samples = [item["code"] for item in data]
                 labels = [item["label"] for item in data]
-                try:
-                    self.model.fit(code_samples, labels)
-                    print(f"Model trained on {len(data)} samples from MongoDB.")
-                except Exception as e:
-                    print(f"Training failed: {e}")
+                self.model.fit(code_samples, labels)
+                joblib.dump(self.model, "model.pkl")
+                print(f"Model trained & saved on {len(data)} samples.")
 
         def check_code(self, code_text):
             try:
                 prediction = self.model.predict([code_text])
                 return "This code appears clean!" if prediction[0] == 1 else "This code has bad logic."
             except:
-                return "Model not trained yet."
-
+                return "Model warming up..."
 
     app = Flask(__name__)
-    socketio = SocketIO(app)
+    socketio = SocketIO(app, cors_allowed_origins="*")
     model = AI()
 
-
     @app.route("/")
-    def home():
-        return render_template("index.html")
+    def home(): return render_template("index.html")
 
+    @app.route("/admin")
+    def admin(): return render_template("admin.html")
 
     @app.route("/check_password", methods=["POST"])
     def check_panel():
         data = request.json
-        user_input = data.get("password")
-        if user_input == os.getenv("ADMIN_SECRET"):
+        if data.get("password") == os.getenv("ADMIN_SECRET"):
             return jsonify({"status": "success"})
         return jsonify({"status": "fail"}), 403
 
-
-    @app.route("/admin")
-    def admin():
-        return render_template("admin.html")
-
-
-    @socketio.on("codesocket")
-    def handle_code(data):
-        result = model.check_code(data)
-        emit("res", result)
-
-
-    @socketio.on("adminsocket")
-    def forward_to_admin(data):
-        emit("adminsocket", data, broadcast=True)
-        queries_collection.insert_one(data)
-
+    @socketio.on("get_info")
+    def handle_get_info():
+        docs = list(queries_collection.find())
+        clean_data = json.loads(json_util.dumps(docs))
+        emit("get_info", clean_data)
 
     @socketio.on("save_to_json")
     def save_and_retrain(data):
-        if "code" in data and "label" in data:
-            training_collection.insert_one(data)
-            model.train_model()
-            print("New data saved to MongoDB and model retrained.")
+        training_collection.insert_one({"code": data["code"], "label": data["label"]})
+        if "id" in data:
+            queries_collection.delete_one({"_id": ObjectId(data["id"])})
+        model.train_model()
 
+    @socketio.on("delete_query")
+    def delete_query(data):
+        queries_collection.delete_one({"_id": ObjectId(data["id"])})
 
     if __name__ == "__main__":
-        port = int(os.environ.get("PORT", 5000))
-        socketio.run(app, host="0.0.0.0", port=port)
+        socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
 except Exception:
     print(traceback.format_exc())
