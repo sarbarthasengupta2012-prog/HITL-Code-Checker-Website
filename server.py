@@ -18,34 +18,53 @@ db = client["codechecker"]
 training_collection = db["training"]
 queries_collection = db["queries"]
 
+
 class AI:
     def __init__(self):
+        self.model_path = "model.pkl"
         try:
-            self.model = joblib.load("model.pkl")
-            print("AI loaded from disk.")
+            self.model = joblib.load(self.model_path)
+            print("AI loaded from "+self.model_path)
         except:
-            print("Creating new model...")
+            print("No model found, making new pkl file.")
             self.model = make_pipeline(CountVectorizer(), LogisticRegression())
             self.train_model()
 
     def train_model(self):
         cursor = training_collection.find({})
         data = list(cursor)
-        labels = [item["label"] for item in data]
-        if len(set(labels)) > 1:
-            code_samples = [item["code"] for item in data]
-            self.model.fit(code_samples, labels)
-            joblib.dump(self.model, "model.pkl")
-            print(f"Model trained & saved on {len(data)} samples.")
-        else:
-            print("Not enough diverse data to train yet (need both clean and messy).")
 
+        if len(data) < 2:
+            print("Training aborted: Need at least 2 samples to train.")
+            return
+        labels = []
+        code_samples = []
+
+        for item in data:
+            labels.append(int(item["label"]))
+            code_samples.append(str(item["code"]))
+        if len(set(labels)) < 2:
+            print("Needs more variety in the db.")
+            return
+        self.model.fit(code_samples, labels)
+        joblib.dump(self.model, self.model_path)
+        print(f"Model successfully trained!")
     def check_code(self, code_text):
+        if not code_text or str(code_text).strip() == "":
+            return "Please provide some code to check."
         try:
-            prediction = self.model.predict([code_text])
-            return "This code appears clean!" if prediction[0] == 1 else "This code has bad logic."
+            prediction = self.model.predict([str(code_text)])[0]
+            prob = self.model.predict_proba([str(code_text)])[0]
+            strA = str(int(prob[1]*100))+"%"
+            if int(prediction) == 1:
+                return ("This code appears clean!"
+                        "\nConfidence score: "+strA)
+            else:
+                return ("This code is spaghetti."
+                        "\nConfidence score: " +strA)
         except Exception as e:
-            return "Model is still learning..."
+            print(f"Prediction error: {e}")
+            return "Error!"
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
