@@ -12,23 +12,24 @@
         <button id="btnQ">If you believe the AI made a mistake, click here.</button>
         <h3 id="res">Results appear here...</h3>
         <script>
-            const socket = io()
+            const socket = io();
             const reportBtn = document.getElementById('btnQ');
             const checkBtn = document.getElementById('btn');
+            const resDisplay = document.getElementById("res");
 
             checkBtn.onclick = () => {
                 const code = document.getElementById('textA').value;
                 socket.emit("codesocket", code);
             };
 
-            socket.on("res", (cocacolaespuma) => {
-                document.getElementById("res").innerText = cocacolaespuma;
+            socket.on("res", (data) => {
+                resDisplay.innerText = data;
             });
 
             reportBtn.onclick = () => {
                 const reportData = {
                     code: document.getElementById('textA').value,
-                    ai_label: res.innerText
+                    ai_label: resDisplay.innerText // Corrected reference
                 };
                 socket.emit("adminsocket", reportData);
 

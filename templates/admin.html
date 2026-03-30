@@ -1,16 +1,36 @@
+<!DOCTYPE html>
 <html>
     <head>
         <title>ADMIN PANEL: CODE IQ</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+        <style>
+            body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+            .query-card {
+                background: white;
+                padding: 15px;
+                margin-bottom: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            pre { background: #272822; color: #f8f8f2; padding: 10px; overflow-x: auto; border-radius: 4px; }
+            button { margin-right: 10px; padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; }
+            .btn-good { background: #28a745; color: white; }
+            .btn-bad { background: #dc3545; color: white; }
+            .btn-ignore { background: #6c757d; color: white; }
+        </style>
     </head>
     <body>
         <h1>ADMIN PANEL</h1>
-        <h3>If you are not a admin: please leave immediately.</h3>
-        <h1>SUBMITTED QUERIES:</h1>
+        <p><em>Security Check Active</em></p>
+        <hr>
+        <h2>SUBMITTED QUERIES:</h2>
         <div id="queries"></div>
+
         <script>
         (async () => {
             const password = prompt("ENTER THE PASSWORD");
+
+            // 1. Verify password via standard POST request
             const response = await fetch('/check_password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -19,36 +39,48 @@
 
             if (!response.ok) {
                 alert("Access Denied");
-                document.body.innerHTML = "<h1>Unauthorized</h1>";
+                document.body.innerHTML = "<h1 style='color:red;'>Unauthorized Access</h1>";
                 return;
             }
 
+            // 2. Connect socket only AFTER password is confirmed
             const socket = io();
             const queriesDiv = document.getElementById('queries');
 
+            // Request initial data
             socket.emit("get_info");
 
             socket.on("get_info", (data) => {
                 queriesDiv.innerHTML = "";
+                if (data.length === 0) {
+                    queriesDiv.innerHTML = "<p>No pending queries. You're all caught up!</p>";
+                }
+
                 data.forEach(item => {
+                    // MongoDB ID is stored as an object, we need the $oid string
                     const id = item._id.$oid;
                     const card = document.createElement('div');
                     card.className = "query-card";
+
+                    // Use textContent for code to prevent XSS (very important!)
                     card.innerHTML = `
-                        <pre><code>${item.code}</code></pre>
-                        <p><strong>AI Suggestion:</strong> ${item.ai_label || 'None'}</p>
-                        <button class="btn-good">Mark CLEAN</button>
-                        <button class="btn-bad">Mark MESSY</button>
-                        <button class="btn-ignore">Ignore</button>
+                        <pre><code></code></pre>
+                        <p><strong>AI Suggestion:</strong> <span class="ai-label"></span></p>
+                        <button class="btn-good">Mark CLEAN (1)</button>
+                        <button class="btn-bad">Mark MESSY (0)</button>
+                        <button class="btn-ignore">Ignore/Delete</button>
                     `;
 
-                    // Clean Button
+                    card.querySelector('code').textContent = item.code;
+                    card.querySelector('.ai-label').textContent = item.ai_label || 'No prediction recorded';
+
+                    // Clean Button (Label 1)
                     card.querySelector('.btn-good').onclick = () => {
                         socket.emit("save_to_json", { id: id, code: item.code, label: 1 });
                         card.remove();
                     };
 
-                    // Messy Button
+                    // Messy Button (Label 0)
                     card.querySelector('.btn-bad').onclick = () => {
                         socket.emit("save_to_json", { id: id, code: item.code, label: 0 });
                         card.remove();
