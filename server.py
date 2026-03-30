@@ -73,10 +73,9 @@ def handle_code_check(code_text):
 
 @socketio.on("adminsocket")
 def handle_admin_report(data):
-    queries_collection.insert_one(data)
-    data["id"] = str(data["id"])
-    del(data["id"])
-    emit("updateLogs",data)
+    ae = queries_collection.insert_one(data)
+    data["_id"] = str(ae.inserted_id)
+    emit("updateLogs",data, broadcast=True)
 
 @socketio.on("get_info")
 def handle_get_info():

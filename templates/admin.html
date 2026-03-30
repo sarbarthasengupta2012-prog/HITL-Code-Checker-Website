@@ -49,9 +49,8 @@
         const socket = io();
         const queriesDiv = document.getElementById('queries');
 
-        socket.emit("get_info");
-
         socket.on("updateLogs", (data) => {
+            console.log("got the data")
             const id = (data._id && data._id.$oid) ? data._id.$oid : (data.id || data._id);
             const card = document.createElement('div');
             card.className = "query-card";
@@ -84,6 +83,8 @@
 
             queriesDiv.prepend(card);
         });
+
+        socket.emit("get_info");
 
         socket.on("get_info", (data) => {
             queriesDiv.innerHTML = "";
