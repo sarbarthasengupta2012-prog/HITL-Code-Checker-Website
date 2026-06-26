@@ -25,7 +25,7 @@ python server.py
   <li>Enter your code in the text box</li>
   <li>Click the button and check the result</li>
   <li>If you believe the results are wrong, then you can send the code to the admin panel for further checking.</li>
-  <li>If the admin finds the AI made a mistake, then the code is sent to a MongoDB database where it is marked as 1 (clean)</li>
+  <li>If the admin finds the AI made a mistake or didn't, then the code is sent to a MongoDB database where it is marked as 1 (clean) or 0 (messy) respectively.</li>
 </ul>
 
 # How does the AI work?
